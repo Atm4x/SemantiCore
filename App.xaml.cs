@@ -24,6 +24,7 @@ namespace SemantiCore
         public HotKeyManager GlobalKeys;
         public ManageWindow ManageWindow;
         public TcpClient Client;
+        public static Stream TcpStream;
 
 
 
@@ -60,7 +61,13 @@ namespace SemantiCore
 
         public void Kill()
         {
-            ServerProcess.Kill();
+            try
+            {
+                ServerProcess.Kill();
+            } catch
+            {
+
+            }
         }
 
         private void Exiting(object sender, ExitEventArgs e)
@@ -77,29 +84,28 @@ namespace SemantiCore
             var path = Path.Combine(Environment.CurrentDirectory, "Resources\\main.py");
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = @"python3";
-            start.Arguments = path;
+            start.Arguments = $"\"{path}\"";
             start.UseShellExecute = false;
             start.CreateNoWindow = false;
             ServerProcess = Process.Start(start);
 
-            Thread.Sleep(2000);
+            Thread.Sleep(10000);
 
             Client = new TcpClient();
             try
             {
-                Client.Connect("127.0.0.1", 19499);
-                var stream = Client.GetStream();
-                using (StreamReader sr = new StreamReader(stream))
+                Client.Connect("127.0.0.1", 19200);
+                TcpStream = Client.GetStream();
+                StreamReader sr = new StreamReader(TcpStream);
+
+                var connection = sr.ReadLine();
+                if (!connection.Equals("Loaded"))
                 {
-                    var connection = sr.ReadLine();
-                    if (!connection.Equals("Loaded"))
-                    {
-                        MessageBox.Show($"Connection lost: {connection}.");
-                    }
-                    else
-                    {
-                        MessageBox.Show("Connected");
-                    }
+                    MessageBox.Show($"Connection lost: {connection}.");
+                }
+                else
+                {
+                    MessageBox.Show("Connected");
                 }
             }
             catch
@@ -109,14 +115,6 @@ namespace SemantiCore
             GlobalKeys.KeyPressed += KeyPressedGlobally;
         }
 
-        public void Send(Stream stream, string message)
-        {
-            using (StreamWriter sw = new StreamWriter(stream))
-            {
-                sw.WriteLine(message);
-            }
-
-        }
 
         private void KeyPressedGlobally(object sender, KeyPressedEventArgs e)
         {
