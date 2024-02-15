@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SemantiCore.Helpers
@@ -15,7 +16,6 @@ namespace SemantiCore.Helpers
             StreamWriter sw = new StreamWriter(App.TcpStream);
             sw.WriteLine(message);
             sw.Flush();
-
         }
 
         public static string ReadLine()

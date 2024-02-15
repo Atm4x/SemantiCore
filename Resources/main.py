@@ -4,6 +4,7 @@ import socket
 import json
 import select
 import sys
+import time
 
 def main():
     if len(sys.argv) < 2:
@@ -43,18 +44,31 @@ def main():
         while 1 > 0:
             ready = select.select([client_socket], [], [], 1)
             if ready[0]:
-                string = client_socket.recv(99999)
-                if not string:
-                    continue
-                string = string.decode('utf-8')
-                json_data = json.loads(string)
+                data = socket.SocketIO(sock=client_socket, mode='r').readline()
+                if not data:
+                    break
 
-                print(string)
+                json_data = json.loads(data.decode('utf-8'))
+
                 if json_data['Type'] == 'IndexingFile':
                     print(f"Получен запрос на индексирование файла {json_data['Type']}")
                     embeddings = index_file(str(json_data['Value']))
                     client_socket.send(f"{json.dumps(embeddings.tolist())}\n".encode('utf-8'))
+                elif json_data['Type'] == 'IndexingText':
+                    print(f"Получен запрос на индексирование текста {json_data['Type']}")
+                    embeddings = model.encode(str(json_data['Value']))
+                    client_socket.send(f"{json.dumps(embeddings.tolist())}\n".encode('utf-8'))
+                elif json_data['Type'] == 'Compare':
+                    print(f"Получен запрос на сравнение {json_data['Type']}")
 
+                    text_embedding = list(json_data['Value']['Text_Vector'])
+                    vector_embedding = list(json_data['Value']['Vector'])
+
+                    similarity = cosine_similarity([text_embedding], [vector_embedding])[0][0]
+
+                    print(f"Схожесть векторов: {similarity}")
+
+                    client_socket.send(f"{similarity}\n".encode('utf-8'))
 
     process_query()
 

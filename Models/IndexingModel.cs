@@ -11,20 +11,20 @@ namespace SemantiCore.Models
     {
         public int Id { get; set; }
         public string FileName { get; set; }
-        public string VectorJson { get; set; }
+        public List<double> Vector { get; set; }
 
         public IndexingModel()
         {
             Id = 0;
             FileName = "";
-            VectorJson = "";
+            Vector = new List<double>();
         }
 
-        public IndexingModel(int id, string fileName, object vector)
+        public IndexingModel(int id, string fileName, List<double> vector)
         {
             Id = id;
             FileName = fileName;
-            VectorJson = JsonConvert.SerializeObject(vector);
+            Vector = vector;
         }
     }
 
@@ -41,6 +41,21 @@ namespace SemantiCore.Models
         {
             Models = models;
         }
+
+        public void AddModel(IndexingModel model)
+        {
+            Models.Add(model);
+        }
+
+        public void RemoveModel(IndexingModel model)
+        {
+            Models.Remove(model);
+        }
+
+        public void Clear()
+        {
+            Models = new List<IndexingModel>();
+        }
     }
 
     public class Query
@@ -55,9 +70,22 @@ namespace SemantiCore.Models
         }
     }
 
+    public class CompareQuery
+    {
+        public List<double> Text_Vector { get; set; }
+        public List<double> Vector { get; set; }
+
+        public CompareQuery(List<double> text, List<double> vector)
+        {
+            Text_Vector = text;
+            Vector = vector;
+        }
+    }
+
     public enum QueryTypes
     {
         IndexingFile = 0,
-
+        IndexingText = 1,
+        Compare = 2,
     }
 }

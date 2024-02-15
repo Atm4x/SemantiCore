@@ -1,4 +1,5 @@
 ﻿using GlobalHotKey;
+using SemantiCore.Models;
 using SemantiCore.Windows;
 using System;
 using System.Collections;
@@ -21,6 +22,7 @@ namespace SemantiCore
     /// </summary>
     public partial class App : Application
     {
+        public static IndexingDirectory IndexedDirectory;
         public HotKeyManager GlobalKeys;
         public ManageWindow ManageWindow;
         public TcpClient Client;
@@ -31,12 +33,13 @@ namespace SemantiCore
         protected override void OnStartup(StartupEventArgs e)
         {
             Task.Run(() => WaitingForError());
-
+            IndexedDirectory = new IndexingDirectory();
             GlobalKeys = new HotKeyManager();
             GlobalKeys.Register(Key.F, ModifierKeys.Shift | ModifierKeys.Windows);
             Configure();
             base.OnStartup(e);
             ManageWindow = new ManageWindow();
+            ManageWindow.Show();
         }
 
         public Task WaitingForError()
@@ -107,7 +110,7 @@ namespace SemantiCore
             start.CreateNoWindow = false;
             ServerProcess = Process.Start(start);
 
-            Thread.Sleep(10000);
+            Thread.Sleep(5000);
 
             Client = new TcpClient();
             try
@@ -120,10 +123,6 @@ namespace SemantiCore
                 if (!connection.Equals("Loaded"))
                 {
                     MessageBox.Show($"Connection lost: {connection}.");
-                }
-                else
-                {
-                    MessageBox.Show("Connected");
                 }
             }
             catch
