@@ -53,10 +53,17 @@ namespace SemantiCore.Windows
             List<string> files = Directory.GetFiles(SelectedDirectory).ToList();
             files = files.Where(file => System.IO.Path.GetExtension(file).EndsWith("txt")).ToList();
 
-            Query query = new Query(QueryTypes.IndexingFile, files[0]);
+            List<List<double>> result = new List<List<double>>();
 
-            TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
-            var answer = TcpHelper.ReadLine();
+            foreach (var file in files)
+            {
+                Query query = new Query(QueryTypes.IndexingFile, file);
+
+                TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
+                var answer = TcpHelper.ReadLine();
+
+                result.Add(JsonConvert.DeserializeObject<List<double>>(answer));
+            }
         }
     }
 }

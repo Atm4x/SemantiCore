@@ -81,10 +81,28 @@ namespace SemantiCore
 
         public void Configure()
         {
+            var modelPath = Environment.CurrentDirectory;
+            bool isDirectoryExists = Directory.GetDirectories(modelPath).Any(file => file.ToLower().EndsWith("LaBSE".ToLower()));
+
             var path = Path.Combine(Environment.CurrentDirectory, "Resources\\main.py");
+
+            var installPath = Path.Combine(Environment.CurrentDirectory, "Resources\\install.py");
+
+            if (!isDirectoryExists)
+            {
+                var process = Process.Start(new ProcessStartInfo()
+                {
+                    FileName = @"python3",
+                    CreateNoWindow = false,
+                    Arguments = $"\"{installPath}\" \"{modelPath}\"",
+                    UseShellExecute = false
+                });
+                process.WaitForExit();
+            }
+
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = @"python3";
-            start.Arguments = $"\"{path}\"";
+            start.Arguments = $"\"{path}\" \"{modelPath}\"";
             start.UseShellExecute = false;
             start.CreateNoWindow = false;
             ServerProcess = Process.Start(start);
