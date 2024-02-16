@@ -1,0 +1,22 @@
+﻿<Window x:Class="SemantiCore.Windows.ProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SemantiCore.Windows"
+        mc:Ignorable="d"
+        Title="SemantiCore: Прогресс" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <ProgressBar Grid.Row="1" x:Name="Progress" Margin="20" Foreground="Lime" Background="Gray" />
+        <TextBlock x:Name="ProgressFilename" Grid.Row="2" Margin="20" FontSize="15" Text="c:\\" TextAlignment="Center"/>
+        <TextBlock x:Name="ProgressStatus" Grid.Row="3" FontSize="15"  Margin="20" Text="Индексировано: 0 из 0" TextAlignment="Center"/>
+    </Grid>
+</Window>

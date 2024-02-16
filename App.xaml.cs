@@ -110,7 +110,7 @@ namespace SemantiCore
             start.CreateNoWindow = false;
             ServerProcess = Process.Start(start);
 
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
 
             Client = new TcpClient();
             try

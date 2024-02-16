@@ -17,7 +17,7 @@
 
         <Button Grid.Row="0" Content="Выбрать папку" Click="ChooseFolder"/>
         <Button Grid.Row="1" Content="Начать индексирование" Click="StartIndexing"/>
-        <TextBox Grid.Row="2" x:Name="Compare_text"/>
+        <TextBox Grid.Row="2" x:Name="Compare_text" TextWrapping="Wrap"/>
         <Button Grid.Row="3" Content="Сравнить" Click="CompareClicked"/>
     </Grid>
 </i:GlobalWindow>

@@ -11,20 +11,20 @@ namespace SemantiCore.Models
     {
         public int Id { get; set; }
         public string FileName { get; set; }
-        public List<double> Vector { get; set; }
+        public List<List<double>> Vectors { get; set; }
 
         public IndexingModel()
         {
             Id = 0;
             FileName = "";
-            Vector = new List<double>();
+            Vectors = new List<List<double>>();
         }
 
-        public IndexingModel(int id, string fileName, List<double> vector)
+        public IndexingModel(int id, string fileName, List<List<double>> vectors)
         {
             Id = id;
             FileName = fileName;
-            Vector = vector;
+            Vectors = vectors;
         }
     }
 
