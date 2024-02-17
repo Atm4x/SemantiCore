@@ -31,9 +31,15 @@ namespace SemantiCore.Windows
     public partial class ManageWindow : GlobalWindow
     {
         public string[] extensions = { ".docx", ".rtf", ".doc", ".docm", ".dotx", ".dot", ".dotm", ".pdf", ".txt" };
+
+        public ObservableCollection<DirectoryView> ViewedDirectories
+            = new ObservableCollection<DirectoryView>();
+
+
         public ManageWindow()
         {
             InitializeComponent();
+            DirectoryList.ItemsSource = ViewedDirectories;
         }
 
         private void ChooseFolder(object sender, RoutedEventArgs e)
@@ -44,54 +50,143 @@ namespace SemantiCore.Windows
 
                 if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(folderBrowser.SelectedPath))
                 {
-                    List<string> files = Directory.GetFiles(folderBrowser.SelectedPath).ToList();
+                    List<string> files = GetInsideFiles(new List<string>(), folderBrowser.SelectedPath);
+
+
                     files = files.Where(file => extensions.Contains(System.IO.Path.GetExtension(file))).ToList();
 
-                    SelectedDirectory = folderBrowser.SelectedPath;
+                    var existedDirectory = App.IndexedDirectories.FirstOrDefault(directory => directory.Path.StartsWith(folderBrowser.SelectedPath));
+
+                    if (existedDirectory != null)
+                    {   
+                        var resultOfQuiz = MessageBox.Show("Эта папка содержи индексированную папку. Соединить файлы?", "Внимание", MessageBoxButton.OKCancel);
+                        if(resultOfQuiz == MessageBoxResult.OK)
+                        {
+                            existedDirectory.Path = folderBrowser.SelectedPath;
+                            StartIndexing();
+                            UpdateViewed();
+                            return;
+                        } 
+                        else
+                        {
+                            return;
+                        }
+                    } 
+                    else
+                    {
+                        bool starts = false;
+                        foreach (var directory in App.IndexedDirectories)
+                        {
+                            if(folderBrowser.SelectedPath.StartsWith(directory.Path))
+                            {
+                                starts = true;
+                                break;
+                            }
+                        }
+                        if(starts)
+                        {
+                            MessageBox.Show("Эта папка уже содержится в индексированном каталоге.");
+                            return;
+                        }
+                    }
+                    var indexed = new IndexingDirectory(folderBrowser.SelectedPath, 1);
+                    App.IndexedDirectories.Add(indexed);
                     System.Windows.Forms.MessageBox.Show("Files found: " + files.Count.ToString(), "Message");
+                    StartIndexing();
+                    UpdateViewed();
                 }
             }
         }
-        public string SelectedDirectory = "";
+
+        public void UpdateViewed()
+        {
+            ViewedDirectories.Clear();
+            foreach (var directory in App.IndexedDirectories)
+            {
+                ViewedDirectories.Add(new DirectoryView(
+                           directory.Id, directory.Path.Replace('\\', '/').Split('/').Last(), directory.Path));
+            }
+        }
+
+        private List<string> GetInsideFiles(List<string> addFiles, string folder)
+        {
+            try
+            {
+                if (!Directory.Exists(folder))
+                {
+                    return addFiles;
+                }
+
+                string[] files = Directory.GetFiles(folder);
+
+                string[] directories = Directory.GetDirectories(folder);
+
+                addFiles.AddRange(files);
+
+                foreach (var dir in directories)
+                {
+                    GetInsideFiles(addFiles, dir);
+                }
+
+                return addFiles;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}");
+            }
+            return Directory.GetFiles(folder).ToList();
+        }
 
         private ProgressWindow _progressWindow;
 
-        private void StartIndexing(object sender, RoutedEventArgs e)
+        private void StartIndexing()
         {
-            List<string> files = Directory.GetFiles(SelectedDirectory).ToList();
-            var infos = files.Where(file => extensions.Contains(System.IO.Path.GetExtension(file)))
-                .Select(x => new FileInfo(x)).OrderBy(file => file.Length)
-                .ToList();
-            
+            List<FileInfo> allFiles = new List<FileInfo>();
 
-            App.IndexedDirectory.Clear();
+            foreach (var directory in App.IndexedDirectories)
+            {
+                List<string> files = GetInsideFiles(new List<string>(), directory.Path);
+                var infos = files.Where(file => extensions.Contains(System.IO.Path.GetExtension(file)))
+                    .Where(file => !directory.Models.Any(model => model.FileName.Equals(file)))
+                    .Select(x => new FileInfo(x)).OrderBy(file => file.Length)
+                    .ToList();
+
+                allFiles.AddRange(infos);
+            }
             _progressWindow = new ProgressWindow();
-            _progressWindow.SetMax(infos.Count);
+            _progressWindow.SetMax(allFiles.Count);
             _progressWindow.Show();
-            Thread thread = new Thread(() => Indexing(infos.Select(x => x.FullName)));
+            Thread thread = new Thread(() => Indexing(allFiles.Select(x => x.FullName)));
             thread.Start();
         }
 
         public void Indexing(IEnumerable<string> files)
         {
             int i = 0;
-            foreach (var file in files)
+            try
             {
-                i++;
-                Query query = new Query(QueryTypes.IndexingFile, $"{file}");
-                TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
-                var answer = TcpHelper.ReadLine();
-                var vectors = JsonConvert.DeserializeObject<List<List<double>>>(answer);
-                if(vectors == null)
+                foreach (var file in files)
                 {
-                    MessageBox.Show("Ошибка при получении: " + answer);
+                    i++;
+                    Query query = new Query(QueryTypes.IndexingFile, $"{file}");
+                    TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
+                    var answer = TcpHelper.ReadLine();
+                    var vectors = JsonConvert.DeserializeObject<List<List<double>>>(answer);
+                    if (vectors == null)
+                    {
+                        MessageBox.Show("Ошибка при получении: " + answer);
+                        Dispatcher.Invoke(() => _progressWindow.SetValue(i, file));
+                        continue;
+                    }
+                    IndexingModel model = new IndexingModel(i, file, vectors);
+
+                    App.IndexedDirectories.First(directory => file.StartsWith(directory.Path))
+                        .AddModel(model);
                     Dispatcher.Invoke(() => _progressWindow.SetValue(i, file));
-                    continue;
                 }
-                IndexingModel model = new IndexingModel(i, file, vectors);
-                
-                App.IndexedDirectory.AddModel(model);
-                Dispatcher.Invoke(() => _progressWindow.SetValue(i, file));
+            } catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка(");
             }
         }
 
@@ -105,7 +200,8 @@ namespace SemantiCore.Windows
             List<Similarity> similarities = new List<Similarity>();
 
             
-            foreach (var model in App.IndexedDirectory.Models)
+            foreach(var indexedDirectory in App.IndexedDirectories)
+            foreach (var model in indexedDirectory.Models)
             {
                 List<double> list = new List<double>();
 
@@ -128,7 +224,7 @@ namespace SemantiCore.Windows
                         return;
                     }
                 }
-                similarities.Add(new Similarity(model.Id, list.Max()));
+                similarities.Add(new Similarity(model.Id, model.FileName, list.Count>0 ? list.Max() : 0));
             }
 
             //similarities = similarities.OrderBy(x => x.Value).ToList();
@@ -142,7 +238,7 @@ namespace SemantiCore.Windows
             //
 
             MessageBox.Show(string.Join("\n", similarities.OrderByDescending(x => x.Value).Select(x => 
-            $"Документ {System.IO.Path.GetFileName(App.IndexedDirectory.Models.First(y=> y.Id == x.Id).FileName)}: {x.Value}")));
+            $"Документ {System.IO.Path.GetFileName(x.Path)}: {x.Value}")));
         }
 
         public static double GetCosineSimilarity(List<double> V1, List<double> V2)
@@ -168,14 +264,29 @@ namespace SemantiCore.Windows
             return (similarities[(int)(mid)] + similarities[(int)(mid + 0.5)]) / 2;
         }
 
+        public class DirectoryView
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Path { get; set; }
+            public DirectoryView(int id, string name, string path)
+            {
+                Id = id;
+                Name = name;
+                Path = path;
+            }
+        }
+
         public class Similarity
         {
             public int Id { get; set; }
+            public string Path { get; set; }
             public double Value { get; set; }
 
-            public Similarity(int id, double value)
+            public Similarity(int id, string path, double value)
             {
                 Id = id;
+                Path = path;
                 Value = value;
             }
         }

@@ -9,15 +9,52 @@
         Title="ManageWindow" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="4*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
 
-        <Button Grid.Row="0" Content="Выбрать папку" Click="ChooseFolder"/>
-        <Button Grid.Row="1" Content="Начать индексирование" Click="StartIndexing"/>
-        <TextBox Grid.Row="2" x:Name="Compare_text" TextWrapping="Wrap"/>
-        <Button Grid.Row="3" Content="Сравнить" Click="CompareClicked"/>
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="3*"/>
+                </Grid.RowDefinitions>
+                <Button Grid.Row="0" Content="Добавить папку" Click="ChooseFolder"/>
+                
+                <ListBox Grid.Row="1" x:Name="DirectoryList">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="1.5*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" FontSize="15" FontWeight="Bold" Text="{Binding Path=Name}"/>
+                                    <TextBlock Grid.Row="1" FontSize="12" Text="{Binding Path=Path}"/>
+                                </Grid>
+                            </Border>
+
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+            
+        </Grid>
+
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" x:Name="Compare_text" TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Content="Сравнить" Click="CompareClicked"/>
+        </Grid>
     </Grid>
 </i:GlobalWindow>

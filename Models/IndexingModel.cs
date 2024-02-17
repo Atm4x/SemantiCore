@@ -30,16 +30,24 @@ namespace SemantiCore.Models
 
     public class IndexingDirectory
     {
+        public int Id { get; set; }
+
         public List<IndexingModel> Models { get; set; }
 
-        public IndexingDirectory()
+        public string Path { get; set; }
+
+        public IndexingDirectory(string path, int id)
         {
             Models = new List<IndexingModel>();
+            Path = path;
+            Id = id;    
         }
 
-        public IndexingDirectory(List<IndexingModel> models)
+        public IndexingDirectory(List<IndexingModel> models, string path, int id)
         {
             Models = models;
+            Path = path;
+            Id = id;
         }
 
         public void AddModel(IndexingModel model)

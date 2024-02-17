@@ -9,6 +9,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace SemantiCore
     /// </summary>
     public partial class App : Application
     {
-        public static IndexingDirectory IndexedDirectory;
+        public static List<IndexingDirectory> IndexedDirectories;
         public HotKeyManager GlobalKeys;
         public ManageWindow ManageWindow;
         public TcpClient Client;
@@ -33,7 +34,7 @@ namespace SemantiCore
         protected override void OnStartup(StartupEventArgs e)
         {
             Task.Run(() => WaitingForError());
-            IndexedDirectory = new IndexingDirectory();
+            IndexedDirectories = new List<IndexingDirectory>();
             GlobalKeys = new HotKeyManager();
             GlobalKeys.Register(Key.F, ModifierKeys.Shift | ModifierKeys.Windows);
             Configure();
@@ -110,7 +111,8 @@ namespace SemantiCore
             start.CreateNoWindow = false;
             ServerProcess = Process.Start(start);
 
-            Thread.Sleep(10000);
+            while (IsAvailableTcp(19200))
+                Thread.Sleep(1000);
 
             Client = new TcpClient();
             try
@@ -132,6 +134,13 @@ namespace SemantiCore
             GlobalKeys.KeyPressed += KeyPressedGlobally;
         }
 
+        private bool IsAvailableTcp(int port)
+        {
+            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            var tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
+
+            return !tcpConnInfoArray.Any(x => x.Port == port); ;
+        }
 
         private void KeyPressedGlobally(object sender, KeyPressedEventArgs e)
         {

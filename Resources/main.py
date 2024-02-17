@@ -5,6 +5,7 @@ import json
 import select
 import sys
 import win32com.client
+import pypdfium2 as pdfium
 from pypdf import PdfReader
 import textwrap as tw
 
@@ -68,23 +69,21 @@ def main():
         elif ends_for(filename, exts_docs):
             doc = win32com.client.GetObject(filename)
             text = doc.Content.Text
-
             text_embeddings = []
-
             tw_text = tw.wrap(text, 10000, break_long_words=False)
-            print(filename)
-            print(len(tw_text))
             for piece in tw_text:
+                print(piece[-5:])
                 text_embeddings.append(model.encode(piece).tolist())
             return text_embeddings
 
         elif ends_for(filename, exts_pdf):
-            pdf = PdfReader(filename)
+            #pdf = PdfReader(filename)
+            pdf = pdfium.PdfDocument(filename)
             text = []
             text_embeddings = []
-            for page in pdf.pages:
-                text.append(page.extract_text())
-            tw_text = tw.wrap('\n'.join(text), 5000, break_long_words=False)
+            for page in pdf:
+                text.append(page.get_textpage().get_text_range() + '\n')
+            tw_text = tw.wrap('\n'.join(text), 10000, break_long_words=False)
             for piece in tw_text:
                 text_embeddings.append(model.encode(piece).tolist())
             return text_embeddings
@@ -108,17 +107,15 @@ def main():
                     print(f"Получен запрос на индексирование текста {json_data['Type']}")
                     embeddings = model.encode(str(json_data['Value']))
                     client_socket.send(f"{json.dumps(embeddings.tolist())}\n".encode('utf-8'))
-                elif json_data['Type'] == 'Compare':
-                    # f"Получен запрос на сравнение {json_data['Type']}"
-
-                    text_embedding = list(json_data['Value']['Text_Vector'])
-                    vector_embedding = list(json_data['Value']['Vector'])
-
-                    similarity = cosine_similarity([text_embedding], [vector_embedding])[0][0]
-
-                    # f"Схожесть векторов: {similarity}")
-
-                    client_socket.send(f"{similarity}\n".encode('utf-8'))
+                #elif json_data['Type'] == 'Compare':
+                #    # f"Получен запрос на сравнение {json_data['Type']}"
+                #
+                #    text_embedding = list(json_data['Value']['Text_Vector'])
+                #    vector_embedding = list(json_data['Value']['Vector'])
+                #
+                #    similarity = cosine_similarity([text_embedding], [vector_embedding])[0][0]
+                #
+                #    client_socket.send(f"{similarity}\n".encode('utf-8'))
 
     process_query()
 
