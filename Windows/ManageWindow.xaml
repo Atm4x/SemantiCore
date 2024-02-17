@@ -6,55 +6,145 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SemantiCore.Windows"
         mc:Ignorable="d"
-        Title="ManageWindow" Height="450" Width="800">
-    <Grid>
+        Title="SemantiCore: Семантический поиск" Height="450" Width="800">
+
+    <i:GlobalWindow.Resources>
+        <Style x:Key="DefaultButton" TargetType="Button">
+            <Setter Property="Background" Value="#323239"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderThickness="0">
+                            <TextBlock Text="{TemplateBinding Content}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" FontSize="15"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="Background" Value="#323239"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#43434a"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </i:GlobalWindow.Resources>
+    <Grid Background="#202027">
         <Grid.RowDefinitions>
             <RowDefinition Height="4*"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
+
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50"/>
+                <RowDefinition Height="3*"/>
+            </Grid.RowDefinitions>
 
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="3*"/>
-                </Grid.RowDefinitions>
-                <Button Grid.Row="0" Content="Добавить папку" Click="ChooseFolder"/>
-                
-                <ListBox Grid.Row="1" x:Name="DirectoryList">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="1.5*"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
+            <Button Grid.Row="0" Grid.Column="0" Content="Добавить папку" Click="ChooseFolder" Foreground="White" Style="{DynamicResource DefaultButton}"/>
 
-                                    <TextBlock Grid.Row="0" FontSize="15" FontWeight="Bold" Text="{Binding Path=Name}"/>
-                                    <TextBlock Grid.Row="1" FontSize="12" Text="{Binding Path=Path}"/>
-                                </Grid>
-                            </Border>
+            <ListBox Grid.Row="1" Grid.Column="0"  x:Name="DirectoryList" Background="Transparent" BorderThickness="0" SelectionMode="Single" SelectionChanged="SelectionChanged">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="Transparent">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1.5*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-            
+                                <TextBlock Grid.Row="0" Foreground="White" FontSize="15" FontWeight="Bold" Text="{Binding Path=Name}"/>
+                                <TextBlock Grid.Row="1" Foreground="White" FontSize="12" Text="{Binding Path=Path}"/>
+                            </Grid>
+                        </Border>
+
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border Grid.Row="0" Grid.Column="2" Background="#323239" Padding="15 0 15 0">
+                <TextBlock x:Name="SelectedDirectoryText" Text="Не выбрано" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Foreground="White" />
+            </Border>
+
+            <Border Grid.Row="1" Grid.Column="2" Background="#1a1a21">
+                <Grid>
+                    <ListBox x:Name="FileSystem" Background="Transparent" BorderThickness="0" Visibility="Visible">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Text="{Binding Name}" Foreground="White"/>
+                                        <TextBlock Grid.Row="1" Text="{Binding Path}" Foreground="#a9a9a9"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <ListBox x:Name="FileFound" Background="Transparent"  BorderThickness="0" Visibility="Hidden" HorizontalContentAlignment="Stretch">
+                        
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" Grid.Row="0" Text="{Binding Name}" Foreground="White"/>
+                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" Grid.Row="1" Text="{Binding Path}" Foreground="#a9a9a9"/>
+
+                                        <StackPanel Grid.RowSpan="2" Grid.Column="1" Orientation="Horizontal">
+                                            <TextBlock Text="Сходство: " Padding="5" Foreground="White" VerticalAlignment="Center"/>
+                                            <ProgressBar Foreground="Lime" Background="#32323a" Width="150" Value="{Binding Percentage}" Maximum="100" Minimum="0" Margin="0 5 0 5">
+                                                <ProgressBar.ToolTip>
+                                                    <ToolTip Content="{Binding Percentage}" ContentStringFormat="{}{0:F2}%"/>
+                                                </ProgressBar.ToolTip>
+                                            </ProgressBar>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="2" Background="Black" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+
         </Grid>
+        
+        
 
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="5*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" x:Name="Compare_text" TextWrapping="Wrap"/>
-            <Button Grid.Column="1" Content="Сравнить" Click="CompareClicked"/>
+            <TextBox Grid.Column="0" x:Name="Compare_text" Padding="20" FontSize="15" Foreground="White" TextWrapping="Wrap" Background="#23232a" AcceptsReturn="True" BorderThickness="0"/>
+            <Button Grid.Column="1" Style="{DynamicResource DefaultButton}" Content="Сравнить" Click="CompareClicked" Foreground="White"/>
         </Grid>
+
+
+        <GridSplitter Grid.Row="1" Height="2" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
     </Grid>
 </i:GlobalWindow>

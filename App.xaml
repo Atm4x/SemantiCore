@@ -4,6 +4,6 @@
              xmlns:local="clr-namespace:SemantiCore"
              Exit="Exiting">
     <Application.Resources>
-         
+        
     </Application.Resources>
 </Application>

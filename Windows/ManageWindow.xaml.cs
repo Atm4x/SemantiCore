@@ -104,7 +104,7 @@ namespace SemantiCore.Windows
             foreach (var directory in App.IndexedDirectories)
             {
                 ViewedDirectories.Add(new DirectoryView(
-                           directory.Id, directory.Path.Replace('\\', '/').Split('/').Last(), directory.Path));
+                           directory.Id, directory.Path.Replace('\\', '/').Split('/').Last(), directory.Path, directory));
             }
         }
 
@@ -207,12 +207,7 @@ namespace SemantiCore.Windows
 
                 foreach (var vector in model.Vectors)
                 {
-                    //CompareQuery compareQuery = new CompareQuery(text_vector, vector);
-                    //Query query = new Query(QueryTypes.Compare, compareQuery);
-
                     var answer = GetCosineSimilarity(text_vector, vector);
-                    //TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
-                    //var answer = TcpHelper.ReadLine();
 
                     try
                     {
@@ -237,8 +232,32 @@ namespace SemantiCore.Windows
             //    .Skip(Math.Max(0, similarities.Count - 5)).ToList();
             //
 
-            MessageBox.Show(string.Join("\n", similarities.OrderByDescending(x => x.Value).Select(x => 
-            $"Документ {System.IO.Path.GetFileName(x.Path)}: {x.Value}")));
+
+            if (similarities.Count < 1)
+                return;
+
+            var max = similarities.Select(x => x.Value).Max();
+            var min = similarities.Select(x => x.Value).Min();
+
+            var fullFiles = similarities.Select(x => new FileView()
+            {
+                Id = x.Id,
+                Path = x.Path.Substring(System.IO.Path.GetDirectoryName(
+                    App.IndexedDirectories.First(
+                    directory => directory.Models.FirstOrDefault(
+                        model => model.FileName == x.Path) != null).Path).Length),
+                Name = System.IO.Path.GetFileName(x.Path),
+                Percentage = (x.Value - min) / (max - min) * 100
+            });
+
+            if (FileFound.Visibility == Visibility.Hidden)
+            {
+                FileFound.Visibility = Visibility.Visible;
+                FileSystem.Visibility = Visibility.Hidden;
+            }
+
+
+            FileFound.ItemsSource = fullFiles.OrderByDescending(x => x.Percentage);
         }
 
         public static double GetCosineSimilarity(List<double> V1, List<double> V2)
@@ -269,11 +288,14 @@ namespace SemantiCore.Windows
             public int Id { get; set; }
             public string Name { get; set; }
             public string Path { get; set; }
-            public DirectoryView(int id, string name, string path)
+
+            public IndexingDirectory Connected { get; set; }
+            public DirectoryView(int id, string name, string path, IndexingDirectory connected)
             {
                 Id = id;
                 Name = name;
                 Path = path;
+                Connected = connected; 
             }
         }
 
@@ -289,6 +311,41 @@ namespace SemantiCore.Windows
                 Path = path;
                 Value = value;
             }
+        }
+
+        public class FileView
+        {
+            public int Id { get; set; }
+            public string Path { get; set; }
+            public string Name { get; set; }
+
+            public double Percentage { get; set; } = 0.0;
+        }
+
+        private void SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            var item = (DirectoryView)DirectoryList.SelectedItem;
+            if (item == null)
+            {
+                FileSystem.ItemsSource = null;
+                SelectedDirectoryText.Text = "Не выбрано";
+                return;
+            }
+            if(FileFound.Visibility == Visibility.Visible)
+            {
+                FileFound.Visibility = Visibility.Hidden;
+                FileSystem.Visibility = Visibility.Visible;
+            }
+                
+            var files = item.Connected.Models.Select(x => new FileView()
+            {
+                Id = x.Id,
+                Path = x.FileName.Substring(item.Path.Length),
+                Name = System.IO.Path.GetFileName(x.FileName)
+            });
+
+            SelectedDirectoryText.Text = item.Name;
+            FileSystem.ItemsSource = files;
         }
     }
 }

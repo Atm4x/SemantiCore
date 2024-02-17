@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SemantiCore.Windows"
         mc:Ignorable="d"
         Title="SemantiCore: Прогресс" Height="450" Width="800">
-    <Grid>
+    <Grid Background="#23232a">
         <Grid.RowDefinitions>
             <RowDefinition Height="2*"/>
             <RowDefinition Height="*"/>
@@ -15,8 +15,8 @@
             <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
 
-        <ProgressBar Grid.Row="1" x:Name="Progress" Margin="20" Foreground="Lime" Background="Gray" />
-        <TextBlock x:Name="ProgressFilename" Grid.Row="2" Margin="20" FontSize="15" Text="c:\\" TextAlignment="Center"/>
-        <TextBlock x:Name="ProgressStatus" Grid.Row="3" FontSize="15"  Margin="20" Text="Индексировано: 0 из 0" TextAlignment="Center"/>
+        <ProgressBar Grid.Row="1" x:Name="Progress" Margin="20" Foreground="Lime" Background="#32323a" />
+        <TextBlock x:Name="ProgressFilename" Foreground="White" Grid.Row="2" Margin="20" FontSize="15" Text="c:\\" TextAlignment="Center"/>
+        <TextBlock x:Name="ProgressStatus" Foreground="White" Grid.Row="3" FontSize="15"  Margin="20" Text="Индексировано: 0 из 0" TextAlignment="Center"/>
     </Grid>
 </Window>
