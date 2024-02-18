@@ -34,6 +34,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>SemantiCore.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="GlobalHotKey, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\GlobalHotKey.1.1.0\lib\GlobalHotKey.dll</HintPath>
@@ -66,6 +69,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Converters\DoubleToColorConverter.cs" />
+    <Compile Include="Helpers\Config.cs" />
     <Compile Include="Helpers\TcpHelper.cs" />
     <Compile Include="Interfaces\GlobalWindow.cs" />
     <Compile Include="Models\IndexingModel.cs" />
@@ -74,6 +79,9 @@
     </Compile>
     <Compile Include="Windows\ProgressWindow.xaml.cs">
       <DependentUpon>ProgressWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\SettingsWindow.xaml.cs">
+      <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -112,17 +120,26 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Windows\SettingsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="Resources\main.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AdditionalFiles>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="SemantiCore.ico" />
+  </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="Resources\install.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AdditionalFiles>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\settings-128.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,11 +1,11 @@
-﻿<Window x:Class="SemantiCore.Windows.ProgressWindow"
+﻿<Window x:Class="SemantiCore.Windows.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SemantiCore.Windows"
         mc:Ignorable="d"
-        Title="SemantiCore: Прогресс" Height="450" Width="800">
+        Title="SettingsWindow" Height="450" Width="500">
     <Window.Resources>
         <Style x:Key="DefaultButton" TargetType="Button">
             <Setter Property="Background" Value="#323239"/>
@@ -28,21 +28,17 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <Grid Background="#23232a">
+    <Grid Background="#202027">
         <Grid.RowDefinitions>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="8*"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
-
-        <ProgressBar Grid.Row="1" x:Name="Progress" Margin="20" Foreground="Lime" Background="#32323a" />
-        <TextBlock x:Name="ProgressFilename" Foreground="White" Grid.Row="2" Margin="20" FontSize="15" Text="c:\\" TextAlignment="Center"/>
-        <TextBlock x:Name="ProgressStatus" Foreground="White" Grid.Row="3" FontSize="15"  Margin="20" Text="Индексировано: 0 из 0" TextAlignment="Center"/>
-        <Border Padding="15"  Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="20">
-            <Button Content="Отменить"  Style="{DynamicResource DefaultButton}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Click="CancelClicked"/>
+        <StackPanel>
+            <TextBlock Foreground="White" Text="Путь к индексированным файлам:"/>
+            <TextBox x:Name="IndexingPath" Background="Transparent" Foreground="White"/>
+        </StackPanel>
+        <Border Grid.Row="1" Background="#28282f">
+            <Button HorizontalAlignment="Right" Style="{DynamicResource DefaultButton}" Content="Сохранить" Click="SaveClicked"/>
         </Border>
-        
     </Grid>
 </Window>

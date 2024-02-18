@@ -6,6 +6,7 @@ using SemantiCore.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -40,6 +41,7 @@ namespace SemantiCore.Windows
         {
             InitializeComponent();
             DirectoryList.ItemsSource = ViewedDirectories;
+            UpdateViewed();
         }
 
         private void ChooseFolder(object sender, RoutedEventArgs e)
@@ -153,11 +155,19 @@ namespace SemantiCore.Windows
 
                 allFiles.AddRange(infos);
             }
+            Cancel = false;
             _progressWindow = new ProgressWindow();
             _progressWindow.SetMax(allFiles.Count);
+            _progressWindow.OnCancel += Cancelled;
             _progressWindow.Show();
             Thread thread = new Thread(() => Indexing(allFiles.Select(x => x.FullName)));
             thread.Start();
+        }
+
+        private bool Cancel = false;
+        private void Cancelled()
+        {
+            Cancel = true;
         }
 
         public void Indexing(IEnumerable<string> files)
@@ -178,11 +188,19 @@ namespace SemantiCore.Windows
                         Dispatcher.Invoke(() => _progressWindow.SetValue(i, file));
                         continue;
                     }
+                    if (Cancel)
+                        return;
+
                     IndexingModel model = new IndexingModel(i, file, vectors);
 
                     App.IndexedDirectories.First(directory => file.StartsWith(directory.Path))
                         .AddModel(model);
                     Dispatcher.Invoke(() => _progressWindow.SetValue(i, file));
+                }
+
+                foreach(var directory in App.IndexedDirectories)
+                {
+                    directory.Save();
                 }
             } catch (Exception ex)
             {
@@ -235,6 +253,7 @@ namespace SemantiCore.Windows
 
             if (similarities.Count < 1)
                 return;
+            DirectoryList.SelectedItem = null;
 
             var max = similarities.Select(x => x.Value).Max();
             var min = similarities.Select(x => x.Value).Min();
@@ -247,7 +266,8 @@ namespace SemantiCore.Windows
                     directory => directory.Models.FirstOrDefault(
                         model => model.FileName == x.Path) != null).Path).Length),
                 Name = System.IO.Path.GetFileName(x.Path),
-                Percentage = (x.Value - min) / (max - min) * 100
+                FullPath = x.Path,
+                Percentage = x.Value * 100
             });
 
             if (FileFound.Visibility == Visibility.Hidden)
@@ -317,6 +337,7 @@ namespace SemantiCore.Windows
         {
             public int Id { get; set; }
             public string Path { get; set; }
+            public string FullPath { get; set; }
             public string Name { get; set; }
 
             public double Percentage { get; set; } = 0.0;
@@ -341,11 +362,26 @@ namespace SemantiCore.Windows
             {
                 Id = x.Id,
                 Path = x.FileName.Substring(item.Path.Length),
-                Name = System.IO.Path.GetFileName(x.FileName)
+                Name = System.IO.Path.GetFileName(x.FileName),
+                FullPath = x.FileName
             });
 
             SelectedDirectoryText.Text = item.Name;
             FileSystem.ItemsSource = files;
+        }
+        private void ItemClicked(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1 && FileFound.SelectedItem != null)
+            {
+                var data = (FileView)FileFound.SelectedItem;
+                Process.Start("explorer.exe", string.Format("/select,\"{0}\"", data.FullPath));
+            }
+        }
+
+        private void SettingsClicked(object sender, MouseButtonEventArgs e)
+        {
+            SettingsWindow window = new SettingsWindow();
+            window.ShowDialog();
         }
     }
 }

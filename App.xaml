@@ -4,6 +4,6 @@
              xmlns:local="clr-namespace:SemantiCore"
              Exit="Exiting">
     <Application.Resources>
-        
+        <BitmapImage x:Key="SettingIcon" UriSource="Images/settings-128.png"/>
     </Application.Resources>
 </Application>

@@ -6,9 +6,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SemantiCore.Windows"
         mc:Ignorable="d"
+        xmlns:cv="clr-namespace:SemantiCore.Converters"
         Title="SemantiCore: Семантический поиск" Height="450" Width="800">
 
     <i:GlobalWindow.Resources>
+        <cv:DoubleToColorConverter x:Key="DoubleToColor"/>
+        <cv:DoubleToValueConverter x:Key="DoubleToValue"/>
         <Style x:Key="DefaultButton" TargetType="Button">
             <Setter Property="Background" Value="#323239"/>
             <Setter Property="Template">
@@ -71,7 +74,16 @@
             </ListBox>
 
             <Border Grid.Row="0" Grid.Column="2" Background="#323239" Padding="15 0 15 0">
-                <TextBlock x:Name="SelectedDirectoryText" Text="Не выбрано" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Foreground="White" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="SelectedDirectoryText" Grid.Column="0" Text="Не выбрано" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Foreground="White" />
+                    <Border Grid.Column="1" MouseDown="SettingsClicked">
+                        <Image Source="{StaticResource SettingIcon}" HorizontalAlignment="Right" Stretch="Uniform" Margin="10"/>
+                    </Border>
+                </Grid>
             </Border>
 
             <Border Grid.Row="1" Grid.Column="2" Background="#1a1a21">
@@ -92,13 +104,18 @@
                                 </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                     </ListBox>
 
                     <ListBox x:Name="FileFound" Background="Transparent"  BorderThickness="0" Visibility="Hidden" HorizontalContentAlignment="Stretch">
                         
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="Transparent">
+                                <Border Background="Transparent" MouseDown="ItemClicked">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="*"/>
@@ -109,12 +126,12 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" Grid.Row="0" Text="{Binding Name}" Foreground="White"/>
-                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" Grid.Row="1" Text="{Binding Path}" Foreground="#a9a9a9"/>
+                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" MaxWidth="500" TextTrimming="CharacterEllipsis" Grid.Row="0" Text="{Binding Name}" Foreground="White"/>
+                                        <TextBlock Grid.Column="0" HorizontalAlignment="Left" Grid.Row="1" MaxWidth="500" TextTrimming="CharacterEllipsis" Text="{Binding Path}" Foreground="#a9a9a9"/>
 
                                         <StackPanel Grid.RowSpan="2" Grid.Column="1" Orientation="Horizontal">
                                             <TextBlock Text="Сходство: " Padding="5" Foreground="White" VerticalAlignment="Center"/>
-                                            <ProgressBar Foreground="Lime" Background="#32323a" Width="150" Value="{Binding Percentage}" Maximum="100" Minimum="0" Margin="0 5 0 5">
+                                            <ProgressBar Foreground="{Binding Percentage, Converter={StaticResource DoubleToColor}}" Background="#32323a" Width="150" Value="{Binding Percentage, Converter={StaticResource DoubleToValue}}" Maximum="100" Minimum="0" Margin="0 5 0 5">
                                                 <ProgressBar.ToolTip>
                                                     <ToolTip Content="{Binding Percentage}" ContentStringFormat="{}{0:F2}%"/>
                                                 </ProgressBar.ToolTip>
@@ -124,6 +141,11 @@
                                 </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                     </ListBox>
                 </Grid>
             </Border>

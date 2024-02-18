@@ -20,6 +20,9 @@ namespace SemantiCore.Windows
     /// </summary>
     public partial class ProgressWindow : Window
     {
+        public delegate void Cancelling();
+        public event Cancelling OnCancel;
+
         public ProgressWindow()
         {
             InitializeComponent();
@@ -43,6 +46,12 @@ namespace SemantiCore.Windows
                 this.Close();
                 MessageBox.Show("Индексирование завершено.");
             }
+        }
+
+        private void CancelClicked(object sender, RoutedEventArgs e)
+        {
+            OnCancel?.Invoke();
+            this.Close();
         }
     }
 }

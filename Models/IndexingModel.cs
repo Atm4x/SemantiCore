@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,6 +36,11 @@ namespace SemantiCore.Models
         public List<IndexingModel> Models { get; set; }
 
         public string Path { get; set; }
+        public string FilePath { get; set; }
+        public IndexingDirectory()
+        {
+            
+        }
 
         public IndexingDirectory(string path, int id)
         {
@@ -50,19 +56,61 @@ namespace SemantiCore.Models
             Id = id;
         }
 
+        private bool _saved = true;
+
+        public void Save()
+        {
+            if (_saved)
+                return;
+
+            if (string.IsNullOrWhiteSpace(FilePath))
+            {
+                var path = App.MainConfig.IndexingPath;
+
+                if (string.IsNullOrWhiteSpace(path))
+                    return;
+
+                var name = AbbreviatePath(Path.ToString());
+
+                var fullPath = System.IO.Path.Combine(path, $"{name}.json");
+
+                FilePath = fullPath;
+            }
+
+            File.WriteAllText(FilePath, JsonConvert.SerializeObject(this));
+
+            _saved = true;
+        }
+
+        static string AbbreviatePath(string filePath)
+        {
+            string[] parts = filePath.Split('\\');
+
+            string drive = parts[0];
+
+            int directoryCount = parts.Length - 1;
+
+            string abbreviatedPath = $"{drive.TrimEnd(':')}{'.'.ToString().PadLeft(directoryCount, '.')}{parts[parts.Length-1]}";
+
+            return abbreviatedPath;
+        }
+
         public void AddModel(IndexingModel model)
         {
             Models.Add(model);
+            _saved = false;
         }
 
         public void RemoveModel(IndexingModel model)
         {
             Models.Remove(model);
+            _saved = false;
         }
 
         public void Clear()
         {
             Models = new List<IndexingModel>();
+            _saved = false;
         }
     }
 

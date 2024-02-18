@@ -1,4 +1,6 @@
 ﻿using GlobalHotKey;
+using Newtonsoft.Json;
+using SemantiCore.Helpers;
 using SemantiCore.Models;
 using SemantiCore.Windows;
 using System;
@@ -27,7 +29,9 @@ namespace SemantiCore
         public HotKeyManager GlobalKeys;
         public ManageWindow ManageWindow;
         public TcpClient Client;
+        public static string ConfigPath;
         public static Stream TcpStream;
+        public static Config MainConfig;
 
 
 
@@ -38,9 +42,24 @@ namespace SemantiCore
             GlobalKeys = new HotKeyManager();
             GlobalKeys.Register(Key.F, ModifierKeys.Shift | ModifierKeys.Windows);
             Configure();
+            ConfigPath = Path.Combine(Environment.CurrentDirectory, "config.json");
+            MainConfig = Config.ReadConfig();
+            ReadAllIndexed();
             base.OnStartup(e);
             ManageWindow = new ManageWindow();
             ManageWindow.Show();
+        }
+
+        public void ReadAllIndexed()
+        {
+            if (string.IsNullOrWhiteSpace(MainConfig.IndexingPath))
+                return;
+
+            var files = Directory.GetFiles(MainConfig.IndexingPath);
+            foreach (var file in files)
+            {
+                IndexedDirectories.Add(JsonConvert.DeserializeObject<IndexingDirectory>(File.ReadAllText(file)));
+            }
         }
 
         public Task WaitingForError()
