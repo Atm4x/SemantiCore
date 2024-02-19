@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SemantiCore.Helpers;
 using SemantiCore.Interfaces;
 using SemantiCore.Models;
@@ -9,19 +8,10 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using MessageBox = System.Windows.MessageBox;
 
 namespace SemantiCore.Windows
@@ -141,10 +131,39 @@ namespace SemantiCore.Windows
 
         private ProgressWindow _progressWindow;
 
-        private void StartIndexing()
+        private void StartIndexing(bool ask = false)
+        {
+            List<FileInfo> allFiles = ExtractNotSavedFiles();
+
+            if (allFiles.Count > 0)
+            {
+                if(ask)
+                {
+                    var result = MessageBox.Show($"Найдено {allFiles.Count} файлов. Индексировать?", "Внимание!", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.Cancel)
+                        return;
+                }
+
+                Cancel = false;
+                _progressWindow = new ProgressWindow();
+                _progressWindow.SetMax(allFiles.Count);
+                _progressWindow.OnCancel += Cancelled;
+                _progressWindow.Show();
+                Thread thread = new Thread(() => Indexing(allFiles.Select(x => x.FullName)));
+                thread.Start();
+            }
+            else
+            {
+                if(ask)
+                {
+                    MessageBox.Show("Новых файлов не обнаружено.", "Внимание!");
+                }
+            }
+        }
+
+        private List<FileInfo> ExtractNotSavedFiles()
         {
             List<FileInfo> allFiles = new List<FileInfo>();
-
             foreach (var directory in App.IndexedDirectories)
             {
                 List<string> files = GetInsideFiles(new List<string>(), directory.Path);
@@ -155,13 +174,7 @@ namespace SemantiCore.Windows
 
                 allFiles.AddRange(infos);
             }
-            Cancel = false;
-            _progressWindow = new ProgressWindow();
-            _progressWindow.SetMax(allFiles.Count);
-            _progressWindow.OnCancel += Cancelled;
-            _progressWindow.Show();
-            Thread thread = new Thread(() => Indexing(allFiles.Select(x => x.FullName)));
-            thread.Start();
+            return allFiles;
         }
 
         private bool Cancel = false;
@@ -240,17 +253,6 @@ namespace SemantiCore.Windows
                 similarities.Add(new Similarity(model.Id, model.FileName, list.Count>0 ? list.Max() : 0));
             }
 
-            //similarities = similarities.OrderBy(x => x.Value).ToList();
-            //
-            //var median = Median(similarities.Select(x => x.Value).ToList());
-            //
-            //var changed = similarities.Count>5 ? similarities.Where(x => x.Value >= median).ToList() : similarities;
-            //
-            //var bestMatches = changed
-            //    .Skip(Math.Max(0, similarities.Count - 5)).ToList();
-            //
-
-
             if (similarities.Count < 1)
                 return;
             DirectoryList.SelectedItem = null;
@@ -276,6 +278,7 @@ namespace SemantiCore.Windows
                 FileSystem.Visibility = Visibility.Hidden;
             }
 
+            SelectedDirectoryText.Text = "Сравнение";
 
             FileFound.ItemsSource = fullFiles.OrderByDescending(x => x.Percentage);
         }
@@ -382,6 +385,12 @@ namespace SemantiCore.Windows
         {
             SettingsWindow window = new SettingsWindow();
             window.ShowDialog();
+            UpdateViewed();
+        }
+
+        private void ReloadClicked(object sender, RoutedEventArgs e)
+        {
+            StartIndexing(true);
         }
     }
 }

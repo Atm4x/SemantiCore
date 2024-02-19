@@ -14,7 +14,7 @@ namespace SemantiCore.Helpers
         public string IndexingPath { get; set; }
         public bool AutoDetection { get; set; }
 
-        
+        public bool Debug { get; set; } = false;
 
         public static void WriteConfig(Config config)
         {

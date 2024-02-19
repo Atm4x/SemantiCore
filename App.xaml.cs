@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -16,7 +17,10 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
+using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SemantiCore
 {
@@ -32,34 +36,61 @@ namespace SemantiCore
         public static string ConfigPath;
         public static Stream TcpStream;
         public static Config MainConfig;
-
+        public static NotifyIcon Notifications;
 
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            Notifications = new NotifyIcon();
+            Notifications.Icon = new Icon(Path.Combine(Environment.CurrentDirectory, "SemantiCoreIcon.ico"));
+            Notifications.Visible = true;
+            ConfigPath = Path.Combine(Environment.CurrentDirectory, "config.json");
+            MainConfig = Config.ReadConfig();
             Task.Run(() => WaitingForError());
             IndexedDirectories = new List<IndexingDirectory>();
             GlobalKeys = new HotKeyManager();
             GlobalKeys.Register(Key.F, ModifierKeys.Shift | ModifierKeys.Windows);
             Configure();
-            ConfigPath = Path.Combine(Environment.CurrentDirectory, "config.json");
-            MainConfig = Config.ReadConfig();
             ReadAllIndexed();
             base.OnStartup(e);
             ManageWindow = new ManageWindow();
             ManageWindow.Show();
         }
 
-        public void ReadAllIndexed()
+        public static bool ReadAllIndexed()
         {
             if (string.IsNullOrWhiteSpace(MainConfig.IndexingPath))
-                return;
+                return false;
+
+            if (!Directory.Exists(MainConfig.IndexingPath))
+                return false;
+
+            foreach(var indexing in IndexedDirectories.ToList())
+            {
+                if(!string.IsNullOrWhiteSpace(indexing.FilePath))
+                    IndexedDirectories.Remove(indexing);
+            }
 
             var files = Directory.GetFiles(MainConfig.IndexingPath);
             foreach (var file in files)
             {
-                IndexedDirectories.Add(JsonConvert.DeserializeObject<IndexingDirectory>(File.ReadAllText(file)));
+                try
+                {
+                    IndexedDirectories.Add(JsonConvert.DeserializeObject<IndexingDirectory>(File.ReadAllText(file)));
+                } catch
+                {
+                    MessageBox.Show($"Ошибка при чтении файла {System.IO.Path.GetFileName(file)}");
+                    return false;
+                }
             }
+            return true;
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            Query query = new Query(QueryTypes.Close, null);
+            TcpHelper.WriteLine(JsonConvert.SerializeObject(query));
+            base.OnExit(e);
         }
 
         public Task WaitingForError()
@@ -76,6 +107,7 @@ namespace SemantiCore
                 using (StreamReader reader = process.StandardError)
                 {
                     string result = reader.ReadToEnd();
+                    MessageBox.Show("Python3 не установлен.");
                     Environment.Exit(-1);
                 }
             }
@@ -113,21 +145,40 @@ namespace SemantiCore
 
             if (!isDirectoryExists)
             {
+
                 var process = Process.Start(new ProcessStartInfo()
                 {
                     FileName = @"python3",
-                    CreateNoWindow = false,
+                    CreateNoWindow = true,
                     Arguments = $"\"{installPath}\" \"{modelPath}\"",
                     UseShellExecute = false
                 });
+
+                Notifications.BalloonTipIcon = ToolTipIcon.Info;
+                Notifications.BalloonTipTitle = "Начало установки модели LaBSE";
+                Notifications.BalloonTipText = "Идёт процесс установки весов модели LaBSE.";
+                Notifications.ShowBalloonTip(3000);
                 process.WaitForExit();
+
+
+                Notifications.BalloonTipIcon = ToolTipIcon.Info;
+                Notifications.BalloonTipTitle = "Установка модели LaBSE завершена";
+                Notifications.BalloonTipText = "Процесс установки завершён, модель загружается.";
+                Notifications.ShowBalloonTip(3000);
+            } else
+            {
+                Notifications.BalloonTipIcon = ToolTipIcon.Info;
+                Notifications.BalloonTipTitle = "Запуск сервера";
+                Notifications.BalloonTipText = "Дождитесь загрузки модели для использования семантического поиска.";
+                Notifications.ShowBalloonTip(3000);
             }
 
+            
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = @"python3";
             start.Arguments = $"\"{path}\" \"{modelPath}\"";
             start.UseShellExecute = false;
-            start.CreateNoWindow = false;
+            start.CreateNoWindow = !MainConfig.Debug;
             ServerProcess = Process.Start(start);
 
             while (IsAvailableTcp(19200))

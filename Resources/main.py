@@ -98,7 +98,12 @@ def main():
 
                     json_data = json.loads(data.decode('utf-8'))
 
-                    if json_data['Type'] == 'IndexingFile':
+                    if json_data['Type'] == 'Close':
+                        print(f"Закрытие соединения с {client_address}.")
+                        client_socket.close()
+                        server_socket.close()
+                        break
+                    elif json_data['Type'] == 'IndexingFile':
                         print(f"Получен запрос на индексирование файла {json_data['Type']}")
                         embeddings = index_file(str(json_data['Value']))
                         client_socket.send(f"{json.dumps(embeddings)}\n".encode('utf-8'))

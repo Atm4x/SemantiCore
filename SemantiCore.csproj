@@ -46,6 +46,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -140,6 +141,14 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\settings-128.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Reload-Icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="SemantiCoreIcon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </AdditionalFiles>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

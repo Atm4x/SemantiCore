@@ -143,5 +143,6 @@ namespace SemantiCore.Models
         IndexingFile = 0,
         IndexingText = 1,
         Compare = 2,
+        Close = 3
     }
 }

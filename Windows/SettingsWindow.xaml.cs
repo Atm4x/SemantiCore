@@ -1,17 +1,7 @@
 ﻿using SemantiCore.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using System.Windows.Forms;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SemantiCore.Windows
 {
@@ -30,6 +20,30 @@ namespace SemantiCore.Windows
         {
             App.MainConfig.IndexingPath = IndexingPath.Text;
             Config.WriteConfig(App.MainConfig);
+            if(!App.ReadAllIndexed() && !string.IsNullOrWhiteSpace(IndexingPath.Text))
+            {
+                MessageBox.Show("Указанный каталог не найден.", "Ошибка.");
+            }
+            foreach (var directory in App.IndexedDirectories)
+            {
+                directory.Save();
+            }
+            Close();
+
+            MessageBox.Show("Данные сохранены.");
+        }
+
+        private void OpenClicked(object sender, RoutedEventArgs e)
+        {
+            using (FolderBrowserDialog folderBrowser = new FolderBrowserDialog())
+            {
+                var result = folderBrowser.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(folderBrowser.SelectedPath))
+                {
+                    IndexingPath.Text = folderBrowser.SelectedPath;
+                }
+            }
         }
     }
 }

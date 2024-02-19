@@ -18,7 +18,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" BorderThickness="0">
-                            <TextBlock Text="{TemplateBinding Content}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" FontSize="15"/>
+                            <TextBlock Text="{TemplateBinding Content}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -52,7 +52,18 @@
                 <RowDefinition Height="3*"/>
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" Content="Добавить папку" Click="ChooseFolder" Foreground="White" Style="{DynamicResource DefaultButton}"/>
+            <Grid Grid.Row="0" Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button  Content="Добавить папку" FontSize="15" Click="ChooseFolder" Foreground="White" Style="{DynamicResource DefaultButton}"/>
+                <Button Grid.Column="1" Style="{StaticResource DefaultButton}" Content="⟳" FontSize="25" Click="ReloadClicked">
+                    <Button.ToolTip>
+                        <ToolTip Content="Проверка новых файлов."/>
+                    </Button.ToolTip>
+                </Button>
+            </Grid>
 
             <ListBox Grid.Row="1" Grid.Column="0"  x:Name="DirectoryList" Background="Transparent" BorderThickness="0" SelectionMode="Single" SelectionChanged="SelectionChanged">
                 <ListBox.ItemTemplate>
@@ -66,6 +77,8 @@
 
                                 <TextBlock Grid.Row="0" Foreground="White" FontSize="15" FontWeight="Bold" Text="{Binding Path=Name}"/>
                                 <TextBlock Grid.Row="1" Foreground="White" FontSize="12" Text="{Binding Path=Path}"/>
+
+                                
                             </Grid>
                         </Border>
 
@@ -163,7 +176,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0" x:Name="Compare_text" Padding="20" FontSize="15" Foreground="White" TextWrapping="Wrap" Background="#23232a" AcceptsReturn="True" BorderThickness="0"/>
-            <Button Grid.Column="1" Style="{DynamicResource DefaultButton}" Content="Сравнить" Click="CompareClicked" Foreground="White"/>
+            <Button Grid.Column="1" FontSize="15" Style="{DynamicResource DefaultButton}" Content="Сравнить" Click="CompareClicked" Foreground="White"/>
         </Grid>
 
 
