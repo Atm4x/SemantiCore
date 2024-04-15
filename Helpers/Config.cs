@@ -15,6 +15,8 @@ namespace SemantiCore.Helpers
         public bool AutoDetection { get; set; }
 
         public bool Debug { get; set; } = false;
+        public bool Hosting { get; set; } = true;
+        public string[] Addresses { get; set; } = { "http://localhost:8080/"};
 
         public static void WriteConfig(Config config)
         {

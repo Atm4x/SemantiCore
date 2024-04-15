@@ -223,54 +223,11 @@ namespace SemantiCore.Windows
 
         private void CompareClicked(object sender, RoutedEventArgs e)
         {
-            Query indexingText = new Query(QueryTypes.IndexingText, Compare_text.Text);
-            TcpHelper.WriteLine(JsonConvert.SerializeObject(indexingText));
-            var json_vector = TcpHelper.ReadLine();
-            var text_vector = JsonConvert.DeserializeObject<List<double>>(json_vector);
+            var fullFiles = IndexingHelper.GetFileViews(Compare_text.Text);
 
-            List<Similarity> similarities = new List<Similarity>();
-
-            
-            foreach(var indexedDirectory in App.IndexedDirectories)
-            foreach (var model in indexedDirectory.Models)
-            {
-                List<double> list = new List<double>();
-
-                foreach (var vector in model.Vectors)
-                {
-                    var answer = GetCosineSimilarity(text_vector, vector);
-
-                    try
-                    {
-                        list.Add(answer);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Exception: " + ex.Message);
-                        return;
-                    }
-                }
-                similarities.Add(new Similarity(model.Id, model.FileName, list.Count>0 ? list.Max() : 0));
-            }
-
-            if (similarities.Count < 1)
+            if (fullFiles.Count < 1)
                 return;
             DirectoryList.SelectedItem = null;
-
-            var max = similarities.Select(x => x.Value).Max();
-            var min = similarities.Select(x => x.Value).Min();
-
-            var fullFiles = similarities.Select(x => new FileView()
-            {
-                Id = x.Id,
-                Path = x.Path.Substring(System.IO.Path.GetDirectoryName(
-                    App.IndexedDirectories.First(
-                    directory => directory.Models.FirstOrDefault(
-                        model => model.FileName == x.Path) != null).Path).Length),
-                Name = System.IO.Path.GetFileName(x.Path),
-                FullPath = x.Path,
-                Percentage = x.Value * 100
-            });
 
             if (FileFound.Visibility == Visibility.Hidden)
             {
@@ -282,23 +239,7 @@ namespace SemantiCore.Windows
 
             FileFound.ItemsSource = fullFiles.OrderByDescending(x => x.Percentage);
         }
-
-        public static double GetCosineSimilarity(List<double> V1, List<double> V2)
-        {
-            int N = 0;
-            N = ((V2.Count < V1.Count) ? V2.Count : V1.Count);
-            double dot = 0.0d;
-            double mag1 = 0.0d;
-            double mag2 = 0.0d;
-            for (int n = 0; n < N; n++)
-            {
-                dot += V1[n] * V2[n];
-                mag1 += Math.Pow(V1[n], 2);
-                mag2 += Math.Pow(V2[n], 2);
-            }
-
-            return dot / (Math.Sqrt(mag1) * Math.Sqrt(mag2));
-        }
+        
 
         public double Median(List<double> similarities)
         {

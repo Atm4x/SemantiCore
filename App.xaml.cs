@@ -37,6 +37,7 @@ namespace SemantiCore
         public static Stream TcpStream;
         public static Config MainConfig;
         public static NotifyIcon Notifications;
+        public static HostingHelper Hosting;
 
 
         protected override void OnStartup(StartupEventArgs e)
@@ -53,8 +54,16 @@ namespace SemantiCore
             Configure();
             ReadAllIndexed();
             base.OnStartup(e);
-            ManageWindow = new ManageWindow();
-            ManageWindow.Show();
+            if (App.MainConfig.Hosting)
+            {
+                Hosting = new HostingHelper();
+                Hosting.Start();
+            }
+            else
+            {
+                ManageWindow = new ManageWindow();
+                ManageWindow.Show();
+            }
         }
 
         public static bool ReadAllIndexed()
@@ -209,7 +218,7 @@ namespace SemantiCore
             IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
             var tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
 
-            return !tcpConnInfoArray.Any(x => x.Port == port); ;
+            return !tcpConnInfoArray.Any(x => x.Port == port);
         }
 
         private void KeyPressedGlobally(object sender, KeyPressedEventArgs e)
