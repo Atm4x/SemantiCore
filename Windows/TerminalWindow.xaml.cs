@@ -26,18 +26,31 @@ namespace SemantiCore.Windows
             var x = command ? " > " : DateTime.Now.ToString("HH:mm:ss") + ": ";
             textBox.Text = $"{x} {line}";
             textBox.Margin = new Thickness(0, 3, 0, 3);
-            textBox.Foreground = Brushes.Black;
+            textBox.Foreground = !command ? Brushes.Lime : Brushes.MediumOrchid;
             return textBox;
         }
 
 
         private void Execute(string text)
         {
-            switch(text)
+            switch(text.Split(' ')[0].ToLower())
             {
-                case "exit":
+                case "stop":
                     App.Hosting.Stop();
                     break;
+                case "start":
+                    App.Hosting.Start();
+                    break;
+                case "search":
+                    Task.Run(async () => await App.Hosting.SendTest(string.Join(" ", text.Split(' ').Skip(1))));
+                    break;
+                case "gui":
+                    App.ManageWindow.ShowDialog();
+                    break;
+                default:
+                    WriteLine("Неизвестная команда.");
+                    break;
+
             }
         }
 
@@ -49,6 +62,7 @@ namespace SemantiCore.Windows
         public void WriteLine(string line)
         {
             CommandsStack.Children.Add(GetLine(line));
+            Scroller.ScrollToEnd();
         }
 
         private void SendClicked(object sender, RoutedEventArgs e)
@@ -63,7 +77,7 @@ namespace SemantiCore.Windows
                 return;
 
             CommandsStack.Children.Add(GetLine(text, true));
-            Execute(text);
+            Execute(text.Trim());
             InputBox.Clear();
         }
 
@@ -71,6 +85,20 @@ namespace SemantiCore.Windows
         {
             if (e.Key == Key.Enter)
                 Send();
+        }
+
+        private void TerminalClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if(App.MainConfig.Hosting)
+            {
+                var result = MessageBox.Show("Вы уверены, что хотите выйти?", "Вы уверены?", MessageBoxButton.OKCancel, MessageBoxImage.Stop);
+                if(result == MessageBoxResult.OK)
+                {
+                    if (App.Hosting != null)
+                        App.Hosting.Stop();
+                    Environment.Exit(0);
+                }
+            }
         }
     }
 }

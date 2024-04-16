@@ -15,8 +15,8 @@ namespace SemantiCore.Helpers
         public bool AutoDetection { get; set; }
 
         public bool Debug { get; set; } = false;
-        public bool Hosting { get; set; } = true;
-        public string[] Addresses { get; set; } = { "http://localhost:8080/"};
+        public bool Hosting { get; set; } = false;
+        public string[] Addresses { get; set; } = { "http://localhost:8080/", };
 
         public static void WriteConfig(Config config)
         {
@@ -25,7 +25,7 @@ namespace SemantiCore.Helpers
             if (!File.Exists(path))
                 File.Create(path).Close();
 
-            File.WriteAllText(path, JsonConvert.SerializeObject(config));
+            File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
         }
 
         public static Config ReadConfig()
@@ -46,7 +46,7 @@ namespace SemantiCore.Helpers
             var parsed = JsonConvert.DeserializeObject<Config>(read);
             if (parsed == null)
             {
-                MessageBox.Show("Config error");
+                MessageBox.Show("Ошибка конфигурации");
                 return new Config();
             }
 

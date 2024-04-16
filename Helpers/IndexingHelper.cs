@@ -48,6 +48,8 @@ namespace SemantiCore.Helpers
         {
             List<Similarity> similarities = GetSimilarities(text);
 
+            if (similarities == null)
+                return new List<FileView>();
 
             var fullFiles = similarities.Select(x => new FileView()
             {

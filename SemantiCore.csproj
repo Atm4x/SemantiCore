@@ -78,6 +78,7 @@
     <Compile Include="Helpers\TcpHelper.cs" />
     <Compile Include="Interfaces\GlobalWindow.cs" />
     <Compile Include="Models\IndexingModel.cs" />
+    <Compile Include="Models\RequestModel.cs" />
     <Compile Include="Windows\ManageWindow.xaml.cs">
       <DependentUpon>ManageWindow.xaml</DependentUpon>
     </Compile>
@@ -114,7 +115,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Resources\install.bat" />
+    <AdditionalFiles Include="Resources\install.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </AdditionalFiles>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -162,7 +165,9 @@
     </AdditionalFiles>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\requirements.txt" />
+    <AdditionalFiles Include="Resources\requirements.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </AdditionalFiles>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -31,7 +31,7 @@ namespace SemantiCore
     {
         public static List<IndexingDirectory> IndexedDirectories;
         public HotKeyManager GlobalKeys;
-        public ManageWindow ManageWindow;
+        public static ManageWindow ManageWindow;
         public TcpClient Client;
         public static string ConfigPath;
         public static Stream TcpStream;
@@ -47,6 +47,7 @@ namespace SemantiCore
             Notifications.Visible = true;
             ConfigPath = Path.Combine(Environment.CurrentDirectory, "config.json");
             MainConfig = Config.ReadConfig();
+            Config.WriteConfig(MainConfig);
             Task.Run(() => WaitingForError());
             IndexedDirectories = new List<IndexingDirectory>();
             GlobalKeys = new HotKeyManager();
@@ -54,14 +55,13 @@ namespace SemantiCore
             Configure();
             ReadAllIndexed();
             base.OnStartup(e);
+            ManageWindow = new ManageWindow();
             if (App.MainConfig.Hosting)
             {
                 Hosting = new HostingHelper();
-                Hosting.Start();
             }
             else
             {
-                ManageWindow = new ManageWindow();
                 ManageWindow.Show();
             }
         }

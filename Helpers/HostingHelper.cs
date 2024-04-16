@@ -10,6 +10,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
+using SemantiCore.Models;
+using static SemantiCore.Windows.ManageWindow;
 
 namespace SemantiCore.Helpers
 {
@@ -20,35 +23,58 @@ namespace SemantiCore.Helpers
 
         public HostingHelper()
         {
-            Listener = new HttpListener();
             Terminal = new TerminalWindow();
             Terminal.Show();
+        }
+
+        
+
+        public void Start()
+        {
+            if(Listener != null && Listener.IsListening)
+            {
+                Terminal.WriteLine("Прослушивание уже идёт...");
+                return;
+            }
+
+            _cancel = false;
+
+            Listener = new HttpListener();
             foreach (var address in App.MainConfig.Addresses)
             {
                 var http = $"{address}";
                 Listener.Prefixes.Add(http);
                 Terminal.WriteLine($"Адрес прослушивания: {http}");
             }
+
+            Listener.Start();
+            Terminal.WriteLine("Запуск прослушивания...");
+            Task.Run(async () => await StartListening());
         }
 
-        public void Start()
+        public async Task SendTest(string text)
         {
-            Terminal.WriteLine("Запуск прослушивания...");
-            _cancel = false;
-            Listener.Start();
-            Task.Run(async () => await Module());
-            Thread.Sleep(3000);
-            Task.Run(async () => await SendTest());
-        }
-        private async Task SendTest()
-        {
+            if(Listener == null)
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                Terminal.WriteLine("Включите сервер перед тем, как искать..."));
+                return;
+            }
+            else if(!Listener.IsListening)
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                Terminal.WriteLine("Включите сервер перед тем, как искать..."));
+                return;
+            }
+
             var client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var requestObject = new
+            var requestObject = new RequestModel
             {
-                text = "Hello, World!"
+                RequestType = RequestType.Similarities,
+                Body = new SearchBody() { SearchText = text, MaxCount = 5 }
             };
 
             var requestString = JsonConvert.SerializeObject(requestObject);
@@ -60,8 +86,11 @@ namespace SemantiCore.Helpers
             {
                 var responseString = await response.Content.ReadAsStringAsync();
                 var responseObject = JsonConvert.DeserializeObject<dynamic>(responseString);
-                Console.WriteLine($"Message: {responseObject.message}");
-                Console.WriteLine($"Text: {responseObject.text}");
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    Terminal.WriteLine($"Поисковая строка: {responseObject.SearchText}");
+                    Terminal.WriteLine($"Результаты: {responseObject.FileViews.ToString()}");
+                });
             }
             else
             {
@@ -70,43 +99,88 @@ namespace SemantiCore.Helpers
 
         }
 
-        private async Task Module()
+        private async Task StartListening()
         {
             while (!_cancel)
             {
                 HttpListenerContext context = await Listener.GetContextAsync();
 
-                using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
-                {
-                    string requestBody = await reader.ReadToEndAsync();
+                var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
+                string requestBody = await reader.ReadToEndAsync();
 
-                    string textParameter = null;
-                    if (!string.IsNullOrEmpty(requestBody))
-                    {
-                        var requestObject = JsonConvert.DeserializeObject<dynamic>(requestBody);
-                        textParameter = requestObject?.text;
-                    }
+                object responseObject = null;
+                if (!context.Request.HttpMethod.Equals(HttpMethod.Post.Method))
+                {   
+                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    context.Response.ContentType = "text/plain";
 
-                    var responseObject = new
-                    {
-                        message = $"Hello, World! You sent: {textParameter ?? "no text parameter"}",
-                        text = textParameter
-                    };
+                    byte[] errorBuffer = Encoding.UTF8.GetBytes("Не найдено.");
 
-                    string responseString = JsonConvert.SerializeObject(responseObject);
-                    byte[] buffer = Encoding.UTF8.GetBytes(responseString);
-
-                    context.Response.ContentLength64 = buffer.Length;
-                    context.Response.StatusCode = 200;
-                    context.Response.ContentType = "application/json";
-
-                    using (var writer = new StreamWriter(context.Response.OutputStream, context.Response.ContentEncoding))
-                    {
-                        await writer.WriteAsync(responseString);
-
-                        context.Response.Close();
-                    }
+                    await context.Response.OutputStream.WriteAsync(errorBuffer, 0, errorBuffer.Length);
+                    context.Response.Close();
+                    continue;
                 }
+                if (string.IsNullOrEmpty(requestBody))
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    context.Response.ContentType = "text/plain";
+
+                    byte[] errorBuffer = Encoding.UTF8.GetBytes("Неверный формат.");
+
+                    await context.Response.OutputStream.WriteAsync(errorBuffer, 0, errorBuffer.Length);
+                    context.Response.Close();
+                    continue;
+                }
+                    var requestObject = JsonConvert.DeserializeObject<RequestModel>(requestBody);
+                if (requestObject != null)
+                {
+                    if (requestObject.RequestType == RequestType.Similarities)
+                    {
+                        var searchBody = JsonConvert.DeserializeObject<SearchBody>(requestObject.Body.ToString());
+                        var allViews = IndexingHelper.GetFileViews(searchBody.SearchText);
+                        var takenViews = allViews.OrderByDescending(x => x.Percentage).Take(searchBody.MaxCount).ToList();
+                        responseObject = new SimilaritiesResponse(searchBody.SearchText, takenViews);
+                    }
+                } else
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    context.Response.ContentType = "text/plain";
+
+                    byte[] errorBuffer = Encoding.UTF8.GetBytes("Неверный формат.");
+
+                    await context.Response.OutputStream.WriteAsync(errorBuffer, 0, errorBuffer.Length);
+                    context.Response.Close();
+                    continue;
+                }
+
+
+
+
+
+
+                string responseString = JsonConvert.SerializeObject(responseObject);
+                byte[] buffer = Encoding.UTF8.GetBytes(responseString);
+
+                context.Response.ContentLength64 = buffer.Length;
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+
+                context.Response.Close();
+
+            }
+            
+        }
+
+        public class SimilaritiesResponse
+        {
+            public string SearchText { get; set; }
+            public List<FileView> FileViews { get; set; }
+            public SimilaritiesResponse(string text, List<FileView> views)
+            {
+                SearchText = text;
+                FileViews = views;
             }
         }
 
@@ -114,9 +188,15 @@ namespace SemantiCore.Helpers
 
         public void Stop()
         {
+            if (Listener != null && !Listener.IsListening)
+            {
+                Terminal.WriteLine("Прослушивание ещё не началось...");
+                return;
+            }
             Terminal.WriteLine("Остановка прослушивания...");
             _cancel = true;
             Listener.Stop();
+            Listener.Close();
             Terminal.WriteLine("Прослушивание остановлено...");
         }
     }
